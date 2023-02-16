@@ -1,5 +1,6 @@
 import express from "express";
 import mysql from "mysql";
+import cors from "cors";
 
 const app = express();
 const db = mysql.createConnection({
@@ -8,6 +9,9 @@ const db = mysql.createConnection({
   password: "Hotchocolate1!",
   database: "depozit",
 });
+
+app.use(express.json());
+app.use(cors());
 
 app.get("/", (req, res) => {
   res.json("Hello, this is the backend for wherehouse!");
@@ -39,20 +43,19 @@ app.get("/categorii/:idCategorie", (req, res) => {
   });
 });
 
-app.get("/vanzari", (req, res) => {
+app.get("/vanzari/:id_categorie/:start_date/:end_date", (req, res) => {
   const idCategorie = req.params.id_categorie;
   const startDate = req.params.start_date;
   const endDate = req.params.end_date;
   const q =
-    "SELECT * FROM vanzari WHERE id_categorie = ? and data >= ? and date <= ?";
-
+    "SELECT * FROM vanzari INNER JOIN produse ON produse.id_produs = vanzari.id_produs WHERE id_categorie = ? and vanzari.data >= ? and vanzari.date <= ?";
   db.query(q, [idCategorie, startDate, endDate], (err, data) => {
     if (err) return res.json(err);
     return res.json(data);
   });
 });
 
-//add a product
+// add a product
 app.post("/adaugare-produs", (req, res) => {
   const q =
     "INSERT INTO produse (`id_produs`, `nume_produs`, `id_categorie`, `pret`, `poza`) VALUES (?)";
@@ -73,14 +76,13 @@ app.post("/adaugare-produs", (req, res) => {
 //add a sell
 app.post("/cart", (req, res) => {
   const q =
-    "INSERT INTO vanzari (`id_vanzare`, `data`, `id_produs`, `cantitate`, `pret`, `id_client`) VALUES (?)";
+    "INSERT INTO vanzari (`id_vanzare`, `data`, `id_produs`, `cantitate`, `pret`) VALUES (?)";
   const values = [
     req.body.id_vanzare,
     req.body.data,
     req.body.id_produs,
     req.body.cantitate,
     req.body.pret,
-    req.body.id_client,
   ];
 
   db.query(q, [values], (err, data) => {
